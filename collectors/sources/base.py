@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from sqlalchemy import select
+
 
 @dataclass
 class DiffResult:
@@ -45,3 +47,27 @@ def upsert_and_diff(
         changed_fields.append(field_name)
 
     return DiffResult(inserted=False, changed_fields=changed_fields)
+
+
+def upsert_by_lookup(session, model_cls, lookup: dict, fields: dict) -> bool:
+    """Insert a new row, or update fields on the row matching `lookup` (an arbitrary
+    filter, not necessarily the PK). Returns True if inserted, False otherwise.
+
+    Unlike upsert_and_diff, this writes no revision history — only cves has a
+    revision_history table today. Use this for tables deduped on a natural key
+    (e.g. advisories on source_vendor+source_advisory_id, windows_updates on
+    kb_number+os_product) rather than a single-column PK lookup."""
+    existing = session.execute(
+        select(model_cls).filter_by(**lookup)
+    ).scalar_one_or_none()
+
+    if existing is None:
+        row = model_cls(**lookup, **fields)
+        session.add(row)
+        return True
+
+    for field_name, new_value in fields.items():
+        if getattr(existing, field_name) != new_value:
+            setattr(existing, field_name, new_value)
+
+    return False
