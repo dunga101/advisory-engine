@@ -1,0 +1,23 @@
+services:
+  collectors:
+    build:
+      context: .
+      dockerfile: collectors/Dockerfile
+    env_file: .env
+    restart: unless-stopped
+
+  review-app:
+    build:
+      context: .
+      dockerfile: review-app/Dockerfile
+    env_file: .env
+    ports:
+      - "192.168.4.130:8080:8080"
+    restart: unless-stopped
+
+  publisher:
+    build:
+      context: .
+      dockerfile: publisher/Dockerfile
+    env_file: .env
+    restart: unless-stopped

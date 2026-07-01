@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# advisory-engine local-only files
+.venv-ansible/
+ansible/.vault_pass.txt
+.env
