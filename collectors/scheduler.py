@@ -2,6 +2,9 @@ import logging
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from collectors.precheck import run_once as run_precheck
+from collectors.sources.cisco import run_once as run_cisco
+from collectors.sources.fortinet import run_once as run_fortinet
 from collectors.sources.kev import run_once as run_kev
 from collectors.sources.msrc import run_once as run_msrc
 from collectors.verdict import run_once as run_verdict
@@ -24,6 +27,27 @@ def run_msrc_job() -> None:
         logger.exception("MSRC collector run failed")
 
 
+def run_cisco_job() -> None:
+    try:
+        run_cisco()
+    except Exception:
+        logger.exception("Cisco collector run failed")
+
+
+def run_fortinet_job() -> None:
+    try:
+        run_fortinet()
+    except Exception:
+        logger.exception("Fortinet collector run failed")
+
+
+def run_precheck_job() -> None:
+    try:
+        run_precheck()
+    except Exception:
+        logger.exception("Pre-check engine run failed")
+
+
 def run_verdict_job() -> None:
     try:
         run_verdict()
@@ -33,12 +57,21 @@ def run_verdict_job() -> None:
 
 def main() -> None:
     scheduler = BlockingScheduler()
-    # Staggered so MSRC/verdict run after KEV lands fresh kev_listed data.
+    # Staggered so MSRC/Cisco/Fortinet/verdict run after KEV lands fresh
+    # kev_listed data, precheck runs after Fortinet so the day's newly
+    # ingested advisories get gated automatically, and verdict runs last so
+    # Cisco/Fortinet data is available when it computes. Publisher is
+    # scheduled separately, from its own container (publisher/main.py) —
+    # collectors has no reason to hold GitHub push credentials.
     scheduler.add_job(run_kev_job, "cron", hour=3, minute=0, id="kev_daily")
     scheduler.add_job(run_msrc_job, "cron", hour=3, minute=15, id="msrc_daily")
+    scheduler.add_job(run_cisco_job, "cron", hour=3, minute=30, id="cisco_daily")
+    scheduler.add_job(run_fortinet_job, "cron", hour=3, minute=35, id="fortinet_daily")
+    scheduler.add_job(run_precheck_job, "cron", hour=3, minute=40, id="precheck_daily")
     scheduler.add_job(run_verdict_job, "cron", hour=3, minute=45, id="verdict_daily")
     logger.info(
-        "collectors scheduler starting; KEV 03:00, MSRC 03:15, verdict 03:45 daily"
+        "collectors scheduler starting; KEV 03:00, MSRC 03:15, Cisco 03:30, "
+        "Fortinet 03:35, precheck 03:40, verdict 03:45 daily"
     )
     scheduler.start()
 
