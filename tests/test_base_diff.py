@@ -1,6 +1,8 @@
 from decimal import Decimal
 
-from collectors.sources.base import upsert_and_diff
+import pytest
+
+from collectors.sources.base import is_valid_cve_id, upsert_and_diff
 
 
 class FakeCve:
@@ -117,3 +119,43 @@ def test_non_null_to_non_null_change_is_still_logged():
 
     assert result.changed_fields == ["cwe_id"]
     assert existing.cwe_id == "CWE-284"
+
+
+# --- CVE-ID validator ---
+# Real-world non-CVE values confirmed in this project's own data: Cisco's
+# "NA" sentinel (cisco-sa-notice-vwL7b0S7, live probe 2026-07-01) and MSRC's
+# pre-CVE "ADV------" advisory IDs / malformed "-M" suffixed IDs (found in
+# the existing cves table).
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "CVE-2026-31431",
+        "CVE-2022-20714",
+        "CVE-2024-0001",
+        "CVE-2026-123456789",  # more than 4 digits is still valid
+    ],
+)
+def test_is_valid_cve_id_accepts_real_cve_shapes(value):
+    assert is_valid_cve_id(value) is True
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "NA",  # Cisco's "no CVE assigned yet" sentinel
+        "ADV170010",  # Microsoft pre-CVE advisory ID
+        "ADV990001",
+        "CVE-2022-2601-M",  # malformed "-M" suffix
+        "CVE-2024-0132-M",
+        "cve-2026-31431",  # wrong case
+        "CVE-26-31431",  # year not 4 digits
+        "CVE-2026-123",  # sequence number under 4 digits
+        "",
+        None,
+        123,
+    ],
+)
+def test_is_valid_cve_id_rejects_non_cve_shapes(value):
+    assert is_valid_cve_id(value) is False

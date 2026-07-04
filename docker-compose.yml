@@ -1,16 +1,39 @@
 services:
+  # Dead-man's-switch / freshness monitoring for the publisher (architecture
+  # review item 3). Deployed here on security-02, not monitor-01, purely
+  # because this session had no SSH/deploy credentials for monitor-01
+  # (tried ansible/admin/root/dmudalige/automation, all refused) even
+  # though monitor-01's existing Grafana/Prometheus/Loki stack was the
+  # originally intended home. Migrating later: stop this container, deploy
+  # the same image + a copy of the uptime-kuma-data volume on monitor-01,
+  # and re-point UPTIME_KUMA_PUSH_URL (push tokens are monitor-specific,
+  # so the one push monitor configured here will need to be recreated,
+  # not just moved).
+  monitoring:
+    image: louislam/uptime-kuma:1
+    volumes:
+      - uptime-kuma-data:/app/data
+    ports:
+      - "192.168.4.130:3001:3001"
+    restart: unless-stopped
+
   collectors:
     build:
       context: .
       dockerfile: collectors/Dockerfile
-    env_file: .env
+    # Holds DATABASE_URL + Cisco credentials only — never GITHUB_PUSH_TOKEN
+    # (build brief: no reason for collectors to hold the push token).
+    env_file: .env.collectors
     restart: unless-stopped
 
   review-app:
     build:
       context: .
       dockerfile: review-app/Dockerfile
-    env_file: .env
+    # DATABASE_URL only — never Cisco credentials or GITHUB_PUSH_TOKEN.
+    # This is the one service with an exposed port, so it gets the
+    # narrowest secret set of the three.
+    env_file: .env.review
     ports:
       - "192.168.4.130:8080:8080"
     restart: unless-stopped
@@ -19,5 +42,22 @@ services:
     build:
       context: .
       dockerfile: publisher/Dockerfile
-    env_file: .env
+    # Holds DATABASE_URL + GITHUB_PUSH_TOKEN only — the sole service that
+    # pushes to the public site repo.
+    env_file: .env.publisher
+    # UPTIME_KUMA_PUSH_URL / SITE_STATUS_URL are monitoring config, not
+    # vault-managed secrets — sourced from the project-root .env (Compose's
+    # own variable-substitution file, distinct from the per-service
+    # env_file above) so they can be filled in after the one manual Kuma
+    # setup step without touching render_env.py/the vault.
+    environment:
+      - UPTIME_KUMA_PUSH_URL=${UPTIME_KUMA_PUSH_URL:-}
+      - SITE_STATUS_URL=${SITE_STATUS_URL:-}
+    # main.py runs its own APScheduler loop (04:00 daily), same pattern as
+    # collectors — a long-running process, so unless-stopped is correct
+    # here. For a manual/ad hoc run, use scripts/verify_publisher.py via
+    # `docker exec` rather than restarting this container.
     restart: unless-stopped
+
+volumes:
+  uptime-kuma-data:

@@ -4,9 +4,22 @@ from datetime import date, datetime, timedelta, timezone
 import requests
 from sqlalchemy import select
 
-from collectors.sources.base import upsert_and_diff, upsert_by_lookup
+from collectors.sources.base import (
+    advisory_gate_hook,
+    cve_gate_hook,
+    is_valid_cve_id,
+    upsert_and_diff,
+    upsert_by_lookup,
+)
 from common.db import get_session_factory
-from common.models import Advisory, AdvisoryCve, Cve, CveRevisionHistory, WindowsUpdate
+from common.models import (
+    Advisory,
+    AdvisoryCve,
+    AdvisoryRevisionHistory,
+    Cve,
+    CveRevisionHistory,
+    WindowsUpdate,
+)
 
 UPDATES_URL = "https://api.msrc.microsoft.com/cvrf/v3.0/updates"
 CVRF_URL_TEMPLATE = "https://api.msrc.microsoft.com/cvrf/v3.0/cvrf/{doc_id}"
@@ -221,6 +234,9 @@ def run_once(session=None) -> dict:
                     "source_url": f"https://msrc.microsoft.com/update-guide/releaseNote/{doc_id}",
                     "severity_vendor": severity_vendor,
                 },
+                revision_cls=AdvisoryRevisionHistory,
+                revision_fk_column="advisory_id",
+                on_field_changed=advisory_gate_hook(session),
             )
             advisories_upserted += 1
             session.flush()
@@ -232,6 +248,18 @@ def run_once(session=None) -> dict:
                 cve_id = vuln.get("CVE")
                 if not cve_id:
                     continue
+                if not is_valid_cve_id(cve_id):
+                    # Older CVRF documents reference pre-CVE Microsoft advisory
+                    # IDs (ADV170010) or malformed "-M" suffixed IDs — not a
+                    # real CVE, so it's filtered rather than inserted into
+                    # cves/advisory_cve (build brief Section 5: CVE is the
+                    # atomic unit).
+                    logger.info(
+                        "MSRC document %s references non-CVE identifier %r, skipping",
+                        doc_id,
+                        cve_id,
+                    )
+                    continue
 
                 diff_result = upsert_and_diff(
                     session,
@@ -241,6 +269,7 @@ def run_once(session=None) -> dict:
                     revision_fk_column="cve_id",
                     pk_value=cve_id,
                     fields=_normalize_cve(vuln),
+                    on_field_changed=cve_gate_hook(session, cve_id),
                 )
                 if diff_result.inserted:
                     cves_inserted += 1

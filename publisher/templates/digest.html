@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Patch Tuesday Digest — Advisory Engine{% endblock %}
+
+{% block content %}
+<p><a href="/">&larr; Home</a></p>
+<h1>Windows Patch Tuesday Digest</h1>
+
+{% if advisories %}
+<p class="muted">{{ advisories[0].published_date }} — {{ advisories | length }} bulletin{{ "s" if advisories | length != 1 else "" }}.</p>
+
+{% for advisory in advisories %}
+<h2><a href="/advisories/{{ advisory.slug }}.html">{{ advisory.title or advisory.source_advisory_id }}</a></h2>
+{{ macros.kb_table(advisory.kbs) }}
+{% endfor %}
+{% else %}
+<p class="muted">No Patch Tuesday bulletins published yet.</p>
+{% endif %}
+{% endblock %}

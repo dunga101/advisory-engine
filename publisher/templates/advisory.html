@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}{{ advisory.title or advisory.source_advisory_id }} — Advisory Engine{% endblock %}
+
+{% block content %}
+<p><a href="/">&larr; Home</a></p>
+<h1>{{ advisory.title or advisory.source_advisory_id }}</h1>
+<p class="byline">
+  Source: {{ advisory.source_vendor }} / {{ advisory.source_advisory_id }}
+  {% if advisory.source_url %} — <a href="{{ advisory.source_url }}">original advisory</a>{% endif %}
+</p>
+<p class="byline">
+  Published: {{ advisory.published_date or "Unknown" }}
+  &middot; Last updated: {{ advisory.last_updated_date or "Unknown" }}
+  &middot; Vendor severity: {{ advisory.severity_vendor or "Not rated by vendor" }}
+  {{ macros.kev_badge(advisory.kev_listed) }}
+</p>
+
+<h2>CVEs</h2>
+{{ macros.cve_table(advisory.cves) }}
+
+{% if advisory.kbs %}
+<h2>Windows Updates &amp; Verdict</h2>
+{{ macros.kb_table(advisory.kbs) }}
+{% for kb in advisory.kbs %}
+  {% if kb.verdict %}
+  <p class="muted"><strong>{{ kb.kb_number }}</strong> rationale: {{ kb.verdict.rationale }}</p>
+  {% endif %}
+{% endfor %}
+{% endif %}
+
+{% if advisory.products %}
+<h2>Affected Products</h2>
+{{ macros.product_table(advisory.products) }}
+{% endif %}
+{% endblock %}

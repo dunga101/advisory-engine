@@ -1,5 +1,5 @@
 from common.db import Base
-from common.models.advisory import Advisory, AdvisoryCve, AdvisoryGuidance
+from common.models.advisory import Advisory, AdvisoryCve, AdvisoryGuidance, AdvisoryRevisionHistory
 from common.models.cve import Cve, CveRevisionHistory
 from common.models.field_report import FieldReport
 from common.models.patch_verdict import PatchVerdictHistory
@@ -12,6 +12,7 @@ __all__ = [
     "Advisory",
     "AdvisoryCve",
     "AdvisoryGuidance",
+    "AdvisoryRevisionHistory",
     "Cve",
     "CveRevisionHistory",
     "FieldReport",

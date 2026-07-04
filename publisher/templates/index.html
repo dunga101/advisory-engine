@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Advisory Engine — Home{% endblock %}
+
+{% block content %}
+{% set vendors = advisories | map(attribute='source_vendor') | unique | list %}
+<div class="layout">
+<aside class="filter-panel" aria-label="Filters">
+  <h3>Filter</h3>
+  <fieldset id="verdict-filter">
+    <legend>Verdict (Recent Verdicts)</legend>
+    <label><input type="checkbox" value="deploy_now" checked> Deploy now</label>
+    <label><input type="checkbox" value="wait" checked> Wait</label>
+    <label><input type="checkbox" value="pilot_ring" checked> Pilot ring</label>
+  </fieldset>
+  <fieldset id="vendor-filter">
+    <legend>Vendor (All Advisories)</legend>
+    {% for vendor in vendors %}
+    <label><input type="checkbox" value="{{ vendor }}" checked> {{ vendor | capitalize }}</label>
+    {% endfor %}
+  </fieldset>
+</aside>
+
+<div class="main-content">
+<h1>Security Advisory Platform</h1>
+<p class="lede">Vendor-sourced security advisories, Patch Tuesday releases, and exploited-status
+data, normalized into plain structured facts — what an issue means, whether it's actively
+exploited, and whether to deploy now or wait. No AI-generated narrative in this view.</p>
+
+<div class="stats-strip">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.total_advisories }}</div>
+    <div class="stat-label">Advisories tracked</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.verdict_counts.get("deploy_now", 0) }}</div>
+    <div class="stat-label">Deploy now</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.verdict_counts.get("wait", 0) }}</div>
+    <div class="stat-label">Wait</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.verdict_counts.get("pilot_ring", 0) }}</div>
+    <div class="stat-label">Pilot ring</div>
+  </div>
+  <div class="stat-card">
+    {% if stats.most_recent_kev %}
+    <div class="stat-value">{{ stats.most_recent_kev[1] }}</div>
+    <div class="stat-label">Most recent KEV addition</div>
+    <div class="stat-detail">{{ stats.most_recent_kev[0] }}</div>
+    {% else %}
+    <div class="stat-value">&mdash;</div>
+    <div class="stat-label">Most recent KEV addition</div>
+    {% endif %}
+  </div>
+</div>
+
+<h2>Recent Verdicts</h2>
+{% if recent %}
+<div class="table-wrap table-wrap--cards">
+<table class="table-verdicts">
+  <thead>
+    <tr><th>Date</th><th>KB</th><th>Product</th><th>Advisory</th><th>Verdict</th></tr>
+  </thead>
+  <tbody>
+    {% for advisory, kb in recent %}
+    <tr data-verdict="{{ kb.verdict.recommendation }}">
+      <td>{{ kb.verdict.as_of_date }}</td>
+      <td>{{ kb.kb_number or "Unknown KB" }}</td>
+      <td>{{ kb.os_product or "Unknown product" }}</td>
+      <td><a href="/advisories/{{ advisory.slug }}.html">{{ advisory.title or advisory.source_advisory_id }}</a></td>
+      <td>{{ macros.verdict_badge(kb.verdict.recommendation, kb.verdict.wait_days_estimate) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="empty-note">No verdicts recorded yet.</p>
+{% endif %}
+
+<h2>Most Recent Patch Tuesday</h2>
+{% if digest %}
+<p>
+  {{ digest[0].published_date }} —
+  {{ digest | length }} bulletin{{ "s" if digest | length != 1 else "" }}.
+  <a href="/digest/">Full digest &rarr;</a>
+</p>
+<ul>
+  {% for advisory in digest %}
+  <li><a href="/advisories/{{ advisory.slug }}.html">{{ advisory.title or advisory.source_advisory_id }}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty-note">No Patch Tuesday bulletins published yet.</p>
+{% endif %}
+
+<h2>All Published Advisories ({{ advisories | length }})</h2>
+<div class="table-wrap table-wrap--cards">
+<table class="table-advisories">
+  <thead>
+    <tr><th>Published</th><th>Source</th><th>Advisory</th><th>Max CVSS</th><th>Exploitation</th></tr>
+  </thead>
+  <tbody>
+    {% for advisory in advisories %}
+    <tr data-vendor="{{ advisory.source_vendor }}">
+      <td>{{ advisory.published_date or "Unknown" }}</td>
+      <td>{{ advisory.source_vendor }}</td>
+      <td><a href="/advisories/{{ advisory.slug }}.html">{{ advisory.title or advisory.source_advisory_id }}</a></td>
+      <td>{{ advisory.max_cvss | format_cvss }}</td>
+      <td>{{ macros.kev_badge(advisory.kev_listed) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
+</div>
+
+<script>
+(function () {
+  function wireFilter(panelId, tableSelector, attr) {
+    var panel = document.getElementById(panelId);
+    var table = document.querySelector(tableSelector);
+    if (!panel || !table) return;
+    var checkboxes = panel.querySelectorAll('input[type="checkbox"]');
+    function apply() {
+      var active = [];
+      checkboxes.forEach(function (cb) { if (cb.checked) active.push(cb.value); });
+      table.querySelectorAll("tbody tr").forEach(function (row) {
+        row.style.display = active.indexOf(row.getAttribute(attr)) === -1 ? "none" : "";
+      });
+    }
+    checkboxes.forEach(function (cb) { cb.addEventListener("change", apply); });
+  }
+  wireFilter("verdict-filter", ".table-verdicts", "data-verdict");
+  wireFilter("vendor-filter", ".table-advisories", "data-vendor");
+})();
+</script>
+{% endblock %}

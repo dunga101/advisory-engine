@@ -2,6 +2,7 @@ import logging
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from collectors.monitoring import alert
 from collectors.precheck import run_once as run_precheck
 from collectors.sources.cisco import run_once as run_cisco
 from collectors.sources.fortinet import run_once as run_fortinet
@@ -15,44 +16,60 @@ logger = logging.getLogger(__name__)
 
 def run_kev_job() -> None:
     try:
-        run_kev()
-    except Exception:
+        result = run_kev()
+    except Exception as exc:
         logger.exception("KEV collector run failed")
+        alert("kev", f"run failed: {type(exc).__name__}: {exc}")
+        return
+    # Unlike MSRC/Cisco/Fortinet (backfill-windowed, legitimately empty on
+    # most days), KEV always fetches CISA's *entire* current catalog —
+    # it has held 1000+ entries every day since inception, so zero is
+    # essentially always a fetch/parse failure, not a real empty feed.
+    # Also matters for kev.py's un-listing detection (architecture review
+    # item 5): a spurious empty response there would otherwise look like
+    # every listed CVE just got delisted at once.
+    if result.get("feed_entry_count") == 0:
+        alert("kev", "feed returned zero entries — treating as a fetch/parse failure, not a real empty catalog")
 
 
 def run_msrc_job() -> None:
     try:
         run_msrc()
-    except Exception:
+    except Exception as exc:
         logger.exception("MSRC collector run failed")
+        alert("msrc", f"run failed: {type(exc).__name__}: {exc}")
 
 
 def run_cisco_job() -> None:
     try:
         run_cisco()
-    except Exception:
+    except Exception as exc:
         logger.exception("Cisco collector run failed")
+        alert("cisco", f"run failed: {type(exc).__name__}: {exc}")
 
 
 def run_fortinet_job() -> None:
     try:
         run_fortinet()
-    except Exception:
+    except Exception as exc:
         logger.exception("Fortinet collector run failed")
+        alert("fortinet", f"run failed: {type(exc).__name__}: {exc}")
 
 
 def run_precheck_job() -> None:
     try:
         run_precheck()
-    except Exception:
+    except Exception as exc:
         logger.exception("Pre-check engine run failed")
+        alert("precheck", f"run failed: {type(exc).__name__}: {exc}")
 
 
 def run_verdict_job() -> None:
     try:
         run_verdict()
-    except Exception:
+    except Exception as exc:
         logger.exception("Verdict engine run failed")
+        alert("verdict", f"run failed: {type(exc).__name__}: {exc}")
 
 
 def main() -> None:

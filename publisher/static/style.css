@@ -1,0 +1,436 @@
+:root {
+  color-scheme: dark;
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-hover: #1c2129;
+  --fg: #e6edf3;
+  --muted: #8b949e;
+  --border: #30363d;
+  --link: #58a6ff;
+  --link-hover: #79c0ff;
+
+  --kev-bg: #f85149;
+  --kev-fg: #ffffff;
+
+  --deploy-now: #ff7b72;
+  --deploy-now-bg: rgba(248, 81, 73, 0.14);
+  --wait: #e3b341;
+  --wait-bg: rgba(227, 179, 65, 0.14);
+  --pilot-ring: #3fb950;
+  --pilot-ring-bg: rgba(63, 185, 80, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+body {
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 1.25rem 4rem;
+}
+
+/* Header / nav */
+
+header.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2.5rem;
+}
+
+header.site-header .page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.brand:hover { color: var(--link-hover); }
+
+nav.site-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-left: 1.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 2px solid transparent;
+}
+
+nav.site-nav a:hover {
+  color: var(--fg);
+  border-bottom-color: var(--link);
+}
+
+/* Typography */
+
+a { color: var(--link); }
+a:hover { color: var(--link-hover); }
+
+h1 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2.5rem 0 0.9rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.lede {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--muted);
+  max-width: 62ch;
+  margin: 0 0 2rem;
+}
+
+.muted { color: var(--muted); font-size: 0.9rem; }
+
+.byline {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0.15rem 0;
+}
+
+.empty-note {
+  color: var(--muted);
+  font-size: 0.92rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+}
+
+/* Tables */
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 1rem 0 1.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+}
+
+thead th {
+  text-align: left;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--surface);
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-hover); }
+
+/* Badges */
+
+.kev-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  background: var(--kev-bg);
+  color: var(--kev-fg);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.75rem 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.verdict-badge .dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.verdict-deploy_now {
+  color: var(--deploy-now);
+  background: var(--deploy-now-bg);
+  border-color: var(--deploy-now);
+}
+.verdict-deploy_now .dot { background: var(--deploy-now); }
+
+.verdict-wait {
+  color: var(--wait);
+  background: var(--wait-bg);
+  border-color: var(--wait);
+}
+.verdict-wait .dot { background: var(--wait); }
+
+.verdict-pilot_ring {
+  color: var(--pilot-ring);
+  background: var(--pilot-ring-bg);
+  border-color: var(--pilot-ring);
+}
+.verdict-pilot_ring .dot { background: var(--pilot-ring); }
+
+footer.site-footer {
+  margin-top: 3.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Readable table width — don't let rows stretch edge-to-edge on wide
+   monitors, even once .page itself grows wider at the >1200px breakpoint. */
+.table-wrap {
+  max-width: 760px;
+}
+
+/* Stats strip (homepage) — degrades to a wrapped/stacked layout on its
+   own via flex-wrap, no media query needed. */
+.stats-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0 0 2rem;
+}
+
+.stat-card {
+  flex: 1 1 170px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.stat-card .stat-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.stat-card .stat-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+
+.stat-card .stat-detail {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+/* Filter panel — hidden by default (mobile/tablet), shown as a sticky
+   left sidebar only at the wide-desktop breakpoint below. */
+.filter-panel {
+  display: none;
+}
+
+.filter-panel h3 {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+.filter-panel fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.filter-panel legend {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  padding: 0;
+}
+
+.filter-panel label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+  cursor: pointer;
+}
+
+.filter-panel input[type="checkbox"] {
+  margin-right: 0.4rem;
+}
+
+/* Wide desktop (>1200px): widen the page shell and switch the homepage
+   into a sidebar + main-content grid. Tables stay capped at 760px above
+   (.table-wrap), so the freed space goes to the filter panel, not to
+   stretched table rows. */
+@media (min-width: 1200px) {
+  .page {
+    max-width: 1280px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .filter-panel {
+    display: block;
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+/* Narrow/mobile (<600px): each table row becomes a stacked card instead
+   of a horizontally-scrolled table. Header row is visually hidden (the
+   card layout itself carries the meaning); column order is remapped via
+   flex `order` per table, matching each table's natural hierarchy. */
+@media (max-width: 599px) {
+  /* The outer wrap's own border/rounding would otherwise nest awkwardly
+     around the individual card borders below — only strip it for the
+     card-ified tables (table-wrap--cards), not product_table's wrap,
+     which stays a plain scrollable table at every width. */
+  .table-wrap--cards {
+    border: none;
+    border-radius: 0;
+    overflow-x: visible;
+  }
+
+  .table-verdicts thead,
+  .table-advisories thead,
+  .table-cves thead,
+  .table-kbs thead {
+    display: none;
+  }
+
+  .table-verdicts,
+  .table-advisories,
+  .table-cves,
+  .table-kbs,
+  .table-verdicts tbody,
+  .table-advisories tbody,
+  .table-cves tbody,
+  .table-kbs tbody {
+    display: block;
+  }
+
+  .table-verdicts tr,
+  .table-advisories tr,
+  .table-cves tr,
+  .table-kbs tr {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin: 0.75rem;
+  }
+
+  .table-verdicts tr:hover,
+  .table-advisories tr:hover,
+  .table-cves tr:hover,
+  .table-kbs tr:hover {
+    background: var(--surface);
+  }
+
+  .table-verdicts td,
+  .table-advisories td,
+  .table-cves td,
+  .table-kbs td {
+    border: none;
+    padding: 0.1rem 0;
+  }
+
+  /* Recent Verdicts: 1 Date, 2 KB, 3 Product, 4 Advisory, 5 Verdict.
+     Card: KB + Product header, verdict prominent, date/advisory secondary. */
+  .table-verdicts td:nth-child(2) { order: 1; font-weight: 700; }
+  .table-verdicts td:nth-child(3) { order: 2; font-weight: 700; margin-bottom: 0.3rem; }
+  .table-verdicts td:nth-child(5) { order: 3; margin: 0.15rem 0 0.4rem; }
+  .table-verdicts td:nth-child(1) { order: 4; font-size: 0.82rem; color: var(--muted); }
+  .table-verdicts td:nth-child(4) { order: 5; font-size: 0.85rem; }
+
+  /* All Published Advisories: 1 Published, 2 Source, 3 Advisory, 4 Max
+     CVSS, 5 Exploitation. Card: advisory title header, exploitation
+     prominent, published/source/CVSS secondary. */
+  .table-advisories td:nth-child(3) { order: 1; font-weight: 700; margin-bottom: 0.2rem; }
+  .table-advisories td:nth-child(5) { order: 2; margin-bottom: 0.3rem; }
+  .table-advisories td:nth-child(1) { order: 3; font-size: 0.82rem; color: var(--muted); }
+  .table-advisories td:nth-child(2) { order: 4; font-size: 0.82rem; color: var(--muted); text-transform: capitalize; }
+  .table-advisories td:nth-child(4) { order: 5; font-size: 0.82rem; color: var(--muted); }
+  .table-advisories td:nth-child(4)::before { content: "Max CVSS: "; }
+
+  /* CVE table: 1 CVE, 2 CVSS, 3 CWE, 4 Exploitation. Card: CVE ID header,
+     exploitation prominent, CVSS/CWE secondary. */
+  .table-cves td:nth-child(1) { order: 1; font-weight: 700; margin-bottom: 0.2rem; }
+  .table-cves td:nth-child(4) { order: 2; margin-bottom: 0.3rem; }
+  .table-cves td:nth-child(2) { order: 3; font-size: 0.85rem; color: var(--muted); }
+  .table-cves td:nth-child(2)::before { content: "CVSS: "; }
+  .table-cves td:nth-child(3) { order: 4; font-size: 0.85rem; color: var(--muted); }
+
+  /* KB/verdict table (digest + advisory Windows Updates section): 1 KB,
+     2 Product, 3 Channel, 4 Supersedes, 5 Verdict. Card: KB + Product
+     header, verdict prominent, channel/supersedes secondary. */
+  .table-kbs td:nth-child(1) { order: 1; font-weight: 700; }
+  .table-kbs td:nth-child(2) { order: 2; font-weight: 700; margin-bottom: 0.3rem; }
+  .table-kbs td:nth-child(5) { order: 3; margin: 0.15rem 0 0.4rem; }
+  .table-kbs td:nth-child(3) { order: 4; font-size: 0.82rem; color: var(--muted); }
+  .table-kbs td:nth-child(3)::before { content: "Channel: "; }
+  .table-kbs td:nth-child(4) { order: 5; font-size: 0.82rem; color: var(--muted); }
+  .table-kbs td:nth-child(4)::before { content: "Supersedes: "; }
+}

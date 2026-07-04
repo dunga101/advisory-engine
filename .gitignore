@@ -221,3 +221,6 @@ __marimo__/
 .venv-ansible/
 ansible/.vault_pass.txt
 .env
+.env.collectors
+.env.publisher
+.env.review

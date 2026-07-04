@@ -40,12 +40,20 @@ from lxml import etree
 from sqlalchemy import select
 
 from collectors.config import FORTINET_BACKFILL_DAYS
-from collectors.sources.base import is_valid_cve_id, upsert_and_diff, upsert_by_lookup
+from collectors.sources.base import (
+    advisory_gate_hook,
+    cve_gate_hook,
+    is_valid_cve_id,
+    reopen_review_gate,
+    upsert_and_diff,
+    upsert_by_lookup,
+)
 from common.db import get_session_factory
 from common.models import (
     Advisory,
     AdvisoryCve,
     AdvisoryProductAffected,
+    AdvisoryRevisionHistory,
     Cve,
     CveRevisionHistory,
     Product,
@@ -249,6 +257,9 @@ def _process_advisory(session, root, ir_id: str) -> tuple[int, int, int]:
         model_cls=Advisory,
         lookup={"source_vendor": "fortinet", "source_advisory_id": ir_id},
         fields=_normalize_advisory(root, ir_id),
+        revision_cls=AdvisoryRevisionHistory,
+        revision_fk_column="advisory_id",
+        on_field_changed=advisory_gate_hook(session),
     )
     session.flush()
     advisory = session.execute(
@@ -276,6 +287,7 @@ def _process_advisory(session, root, ir_id: str) -> tuple[int, int, int]:
                 revision_fk_column="cve_id",
                 pk_value=cve_id,
                 fields=cve_fields,
+                on_field_changed=cve_gate_hook(session, cve_id),
             )
             if diff_result.inserted:
                 cves_inserted += 1
@@ -308,7 +320,7 @@ def _process_advisory(session, root, ir_id: str) -> tuple[int, int, int]:
                     select(Product).filter_by(vendor="Fortinet", product_name=product_name)
                 ).scalar_one()
 
-                upsert_by_lookup(
+                product_link_inserted = upsert_by_lookup(
                     session,
                     model_cls=AdvisoryProductAffected,
                     lookup={
@@ -318,6 +330,19 @@ def _process_advisory(session, root, ir_id: str) -> tuple[int, int, int]:
                     },
                     fields={"fixed_version": None},
                 )
+                if product_link_inserted:
+                    # Same rule as cisco.py: a new (product, version)
+                    # combination is a product/version-list change
+                    # (architecture review item 4's gating field), whether
+                    # it's a brand-new product or a new version range on
+                    # one already linked -- affected_version_range is part
+                    # of the lookup key, so either case inserts a new row
+                    # rather than updating one in place.
+                    reopen_review_gate(
+                        session,
+                        [advisory.id],
+                        reason=f"new product/version linked: {product_name} {version}",
+                    )
                 products_upserted += 1
 
     return cves_inserted, cves_updated, products_upserted
